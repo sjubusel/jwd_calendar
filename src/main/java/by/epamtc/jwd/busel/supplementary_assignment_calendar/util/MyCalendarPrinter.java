@@ -41,8 +41,8 @@ public class MyCalendarPrinter {
 
     public void printActualMonth(Calendar cal) {
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        int actualMaximumDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         int actualMinimumDay = cal.getActualMinimum(Calendar.DAY_OF_MONTH);
+        int actualMaximumDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
         StringBuilder sb = new StringBuilder();
         generateAndAddHeader(sb, cal);
@@ -63,7 +63,7 @@ public class MyCalendarPrinter {
     }
 
     public void printActualYearOneAfterAnother(Calendar cal) {
-        for (int i = 0; i < Calendar.UNDECIMBER; i++) {
+        for (int i = 0; i < MONTHS_IN_YEAR; i++) {
             cal.set(Calendar.MONTH, i);
             printActualMonth(cal);
         }
@@ -173,17 +173,56 @@ public class MyCalendarPrinter {
             delimiter = MONTH_DELIMITER;
         }
         sb.append('\n');
+
+        // generate months
+        StringBuilder[] builders = new StringBuilder[weeksNumber];
+        for (int i = 0; i < builders.length; i++) {
+            builders[i] = new StringBuilder("\n");
+        }
+
+        for (int i = maxMonth - 1; i >= minMonth; i--) {
+            cal.set(Calendar.MONTH, i);
+            int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+            int actualMinimumDay = cal.getActualMinimum(Calendar.DAY_OF_MONTH);
+            int actualMaximumDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+            int pointerToBuildsIndex = 0;
+
+            StringBuilder weekBuilder = new StringBuilder();
+            for (int j = actualMinimumDay; j <= actualMaximumDay; j++) {
+                if (j == 1) {
+                    String firstOffset = calculateFirstDayOfMonthOffset(dayOfWeek);
+                    weekBuilder.append(firstOffset);
+                }
+                weekBuilder.append(DAY_DELIMITER);
+                weekBuilder.append(String.format("%2d", j));
+
+                if (j == actualMaximumDay) {
+                    String lastOffset = calculateLastDayOfMonthOffset(cal, actualMaximumDay);
+                    weekBuilder.append(lastOffset);
+                }
+
+                if ((dayOfWeek++ % DAYS_IN_WEEK) == Calendar.SUNDAY) {
+                    builders[pointerToBuildsIndex].insert(0, weekBuilder);
+                    if (i != minMonth) {
+                        builders[pointerToBuildsIndex].insert(0, MONTH_DELIMITER);
+                    }
+                    weekBuilder.delete(0, weekBuilder.length());
+                    pointerToBuildsIndex++;
+                }
+            }
+        }
+        for (StringBuilder builder : builders) {
+            sb.append(builder);
+        }
         System.out.println(sb.toString());
-//        for (int i = 0; i < weeksNumber; i++) {
-//
-//        }
     }
 
     private int getMaxWeeksNumber(Calendar cal, int minMonth, int maxMonth) {
         int maxWeeksNumber = Integer.MIN_VALUE;
         for (int i = minMonth; i < maxMonth; i++) {
             cal.set(Calendar.MONTH, minMonth);
-            int weeksNumber = cal.get(Calendar.WEEK_OF_MONTH);
+            int weeksNumber = cal.getActualMaximum(Calendar.WEEK_OF_MONTH);
             if (weeksNumber > maxWeeksNumber) {
                 maxWeeksNumber = weeksNumber;
             }

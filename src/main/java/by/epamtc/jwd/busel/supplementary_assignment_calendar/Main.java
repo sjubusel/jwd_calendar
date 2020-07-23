@@ -18,7 +18,6 @@ public class Main {
         System.out.println();
         printer.printActualYearOneAfterAnother(cal);
         System.out.println();
-        printer.printActualYearInColumns(cal, 4);
-
+        printer.printActualYearInColumns(cal, 3);
     }
 }
