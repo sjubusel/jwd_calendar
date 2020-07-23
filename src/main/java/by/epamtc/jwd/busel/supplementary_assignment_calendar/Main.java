@@ -20,6 +20,6 @@ public class Main {
         System.out.println("\n↓↓↓ YEAR WITH COLUMNS ONE AFTER ANOTHER ↓↓↓\n");
         printer.printActualYearOneAfterAnother(cal);
         System.out.println("\n↓↓↓ YEAR WITH ADJUSTABLE COLUMNS ↓↓↓\n");
-        printer.printActualYearInColumns(cal, 3);
+        printer.printActualYearInColumns(cal, columnNumber);
     }
 }

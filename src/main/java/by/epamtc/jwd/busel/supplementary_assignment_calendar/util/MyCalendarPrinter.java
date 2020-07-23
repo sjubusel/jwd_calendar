@@ -77,7 +77,7 @@ public class MyCalendarPrinter {
     }
 
     public void printActualYearInColumns(Calendar cal, int columnQuantity) {
-        if (columnQuantity <= 0 || columnQuantity >= MONTHS_IN_YEAR) {
+        if (columnQuantity <= 0 || columnQuantity > MONTHS_IN_YEAR) {
             columnQuantity = 1;
         }
         int linesOfMonthsNumber = (MONTHS_IN_YEAR % columnQuantity) != 0
@@ -213,6 +213,14 @@ public class MyCalendarPrinter {
                     builders[pointerToBuildsIndex].insert(0, weekBuilder);
                     if (i != minMonth) {
                         builders[pointerToBuildsIndex].insert(0, MONTH_DELIMITER);
+                    }
+
+                    if ((pointerToBuildsIndex != (builders.length - 1))
+                            && (builders[pointerToBuildsIndex + 1].length() > 1)) {
+                        builders[pointerToBuildsIndex + 1].insert(0, MONTH_RECORD_FILLER);
+                        if (i != minMonth && builders[pointerToBuildsIndex + 1].length() > 1) {
+                            builders[pointerToBuildsIndex + 1].insert(0, MONTH_DELIMITER);
+                        }
                     }
                     weekBuilder.delete(0, weekBuilder.length());
                     pointerToBuildsIndex++;
