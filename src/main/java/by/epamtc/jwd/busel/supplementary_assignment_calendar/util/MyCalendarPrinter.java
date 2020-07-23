@@ -47,11 +47,17 @@ public class MyCalendarPrinter {
         StringBuilder sb = new StringBuilder();
         generateAndAddHeader(sb, cal);
 
-        String offset = calculateFirstDayOfMonthOffset(dayOfWeek);
-        sb.append(offset);
+        String firstOffset = calculateFirstDayOfMonthOffset(dayOfWeek);
+        sb.append(firstOffset);
 
         generateAndAddMonthBody(sb, dayOfWeek, actualMinimumDay, actualMaximumDay);
 
+        String lastOffset = calculateLastDayOfMonthOffset(cal, actualMaximumDay);
+        sb.append(lastOffset);
+
+        if (!endsWithLineSeparator(sb)) {
+            sb.append('\n');
+        }
         System.out.println(new String(sb));
 
     }
@@ -64,26 +70,27 @@ public class MyCalendarPrinter {
     }
 
     public void printActualYearInColumns(Calendar cal, int columnQuantity) {
+        if (columnQuantity <= 0 || columnQuantity >= MONTHS_IN_YEAR) {
+            columnQuantity = 1;
+        }
         int linesOfMonthsNumber = (MONTHS_IN_YEAR % columnQuantity) != 0
                                   ? MONTHS_IN_YEAR / columnQuantity + 1
                                   : MONTHS_IN_YEAR / columnQuantity;
-
+        int indexOfLastLine = linesOfMonthsNumber - 1;
         for (int i = 0; i < linesOfMonthsNumber; i++) {
-            int diff = MONTHS_IN_YEAR - (i * columnQuantity);
-            if (diff > linesOfMonthsNumber) {
+            if (i != indexOfLastLine) {
                 printLineOfMonths(cal, i * columnQuantity, (i + 1) * columnQuantity);
-            }
-            else {
+            } else {
                 printLineOfMonths(cal, i * columnQuantity, MONTHS_IN_YEAR);
             }
         }
 
     }
 
+
 //////////////////////////////////////////////////
 // #printActualMonth(Calendar) computation methods
 //////////////////////////////////////////////////
-
     private static String calculateFirstDayOfMonthOffset(int dayOfWeek) {
         int diff = DAYS_IN_WEEK - dayOfWeek;
         int offsetMultiplicator;
@@ -98,8 +105,23 @@ public class MyCalendarPrinter {
                : "";
     }
 
+    private String calculateLastDayOfMonthOffset(Calendar cal,
+            int actualMaximumDay) {
+        cal.set(Calendar.DAY_OF_MONTH, actualMaximumDay);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        int offsetMultiplicator = 0;
+        if (--dayOfWeek != 0) {
+            offsetMultiplicator = DAYS_IN_WEEK - dayOfWeek;
+        }
+        int offsetLength = offsetMultiplicator * CELL_LENGTH;
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        return (offsetMultiplicator != 0)
+               ? String.format("%" + offsetLength + "s", CELL_FILLER)
+               : "";
+    }
+
     private boolean endsWithLineSeparator(StringBuilder sb) {
-        return sb.lastIndexOf("\n") != (sb.length() - 1);
+        return sb.lastIndexOf("\n") == (sb.length() - 1);
     }
 
     private void generateAndAddHeader(StringBuilder builder, Calendar cal) {
@@ -118,9 +140,6 @@ public class MyCalendarPrinter {
             if ((dayOfWeek++ % DAYS_IN_WEEK) == 1) {
                 sb.append('\n');
             }
-        }
-        if (endsWithLineSeparator(sb)) {
-            sb.append('\n');
         }
     }
 
