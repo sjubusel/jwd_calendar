@@ -7,13 +7,18 @@ import java.util.Map;
 public class MyCalendarPrinter {
     private static final int MONTHS_IN_YEAR = 12;
     private static final int DAYS_IN_WEEK = 7;
+    private static final int LINES_IN_MONTH = 8;
+
     private static final int SUNDAY_MASK = DAYS_IN_WEEK - 1;
     private static final int NOT_SUNDAY_MASK = DAYS_IN_WEEK - 2;
+
     private static final String DAY_DELIMITER = "  ";
     private static final String MONTH_DELIMITER = DAY_DELIMITER + DAY_DELIMITER;
+
     private static final int CELL_LENGTH = DAY_DELIMITER.length() + 2;
     private static final String CELL_FILLER = " ";
     private static final int LINE_LENGTH = DAYS_IN_WEEK * CELL_LENGTH;
+
     private static final Map<Integer, String> MONTHS_NAMES = new HashMap<>();
     private static final String MONTH_HEADER;
 
@@ -47,6 +52,40 @@ public class MyCalendarPrinter {
     }
 
     public void printActualMonth(Calendar cal) {
+        boolean isPrintable = true;
+        String monthString = generateSeparateMonthStringView(cal, isPrintable);
+        System.out.println(monthString);
+    }
+
+    public void printActualYear(Calendar cal) {
+        for (int i = 0; i < MONTHS_IN_YEAR; i++) {
+            cal.set(Calendar.MONTH, i);
+            printActualMonth(cal);
+        }
+    }
+
+    public void printActualYear(Calendar cal, int columnQuantity) {
+        if (columnQuantity <= 0 || columnQuantity > MONTHS_IN_YEAR) {
+            columnQuantity = 1;
+        }
+
+        String[] month = generateMonthsStringView(cal);
+
+        int numberOfLinesOfMonths = (MONTHS_IN_YEAR % columnQuantity) != 0
+                                    ? MONTHS_IN_YEAR / columnQuantity + 1
+                                    : MONTHS_IN_YEAR / columnQuantity;
+        int indexOfLastLine = numberOfLinesOfMonths - 1;
+
+        for (int i = 0; i < numberOfLinesOfMonths; i++) {
+            if (i != indexOfLastLine) {
+                printRowOfMonths(month, i * columnQuantity, (i + 1) * columnQuantity);
+            } else {
+                printRowOfMonths(month, i * columnQuantity, MONTHS_IN_YEAR);
+            }
+        }
+    }
+
+    private String generateSeparateMonthStringView(Calendar cal, boolean isPrintable) {
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         int actualMinimumDay = cal.getActualMinimum(Calendar.DAY_OF_MONTH);
         int actualMaximumDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -65,39 +104,20 @@ public class MyCalendarPrinter {
         if (!endsWithLineSeparator(sb)) {
             sb.append('\n');
         }
-        System.out.println(new String(sb));
-
+        if (!isPrintable) {
+            deleteExtraNewLineChar(sb);
+        }
+        return new String(sb);
     }
 
-    public void printActualYearOneAfterAnother(Calendar cal) {
-        for (int i = 0; i < MONTHS_IN_YEAR; i++) {
-            cal.set(Calendar.MONTH, i);
-            printActualMonth(cal);
-        }
+    private void generateAndAddHeader(StringBuilder builder, Calendar cal) {
+        String month = MONTHS_NAMES.get(cal.get(Calendar.MONTH));
+        int year = cal.get(Calendar.YEAR);
+        String header = String.format("%" + LINE_LENGTH + "s\n%s\n",
+                month + CELL_FILLER + year, MONTH_HEADER);
+        builder.append(header);
     }
 
-    public void printActualYearInColumns(Calendar cal, int columnQuantity) {
-        if (columnQuantity <= 0 || columnQuantity > MONTHS_IN_YEAR) {
-            columnQuantity = 1;
-        }
-        int linesOfMonthsNumber = (MONTHS_IN_YEAR % columnQuantity) != 0
-                                  ? MONTHS_IN_YEAR / columnQuantity + 1
-                                  : MONTHS_IN_YEAR / columnQuantity;
-        int indexOfLastLine = linesOfMonthsNumber - 1;
-        for (int i = 0; i < linesOfMonthsNumber; i++) {
-            if (i != indexOfLastLine) {
-                printLineOfMonths(cal, i * columnQuantity, (i + 1) * columnQuantity);
-            } else {
-                printLineOfMonths(cal, i * columnQuantity, MONTHS_IN_YEAR);
-            }
-        }
-
-    }
-
-
-//////////////////////////////////////////////////
-// #printActualMonth(Calendar) computation methods
-//////////////////////////////////////////////////
     private static String calculateFirstDayOfMonthOffset(int dayOfWeek) {
         int diff = DAYS_IN_WEEK - dayOfWeek;
         int offsetMultiplicator;
@@ -110,6 +130,17 @@ public class MyCalendarPrinter {
         return (offsetMultiplicator != 0)
                ? String.format("%" + offsetLength + "s", CELL_FILLER)
                : "";
+    }
+
+    private void generateAndAddMonthBody(StringBuilder sb, int dayOfWeek,
+            int actualMinimumDay, int actualMaximumDay) {
+        for (int i = actualMinimumDay; i <= actualMaximumDay; i++) {
+            sb.append(DAY_DELIMITER);
+            sb.append(String.format("%2d", i));
+            if ((dayOfWeek++ % DAYS_IN_WEEK) == 1) {
+                sb.append('\n');
+            }
+        }
     }
 
     private String calculateLastDayOfMonthOffset(Calendar cal,
@@ -131,126 +162,54 @@ public class MyCalendarPrinter {
         return sb.lastIndexOf("\n") == (sb.length() - 1);
     }
 
-    private void generateAndAddHeader(StringBuilder builder, Calendar cal) {
-        String month = MONTHS_NAMES.get(cal.get(Calendar.MONTH));
-        int year = cal.get(Calendar.YEAR);
-        String header = String.format("%" + LINE_LENGTH + "s\n%s\n",
-                month + CELL_FILLER + year, MONTH_HEADER);
-        builder.append(header);
+    private void deleteExtraNewLineChar(StringBuilder sb) {
+        sb.deleteCharAt(sb.length() - 1);
     }
 
-    private void generateAndAddMonthBody(StringBuilder sb, int dayOfWeek,
-            int actualMinimumDay, int actualMaximumDay) {
-        for (int i = actualMinimumDay; i <= actualMaximumDay; i++) {
-            sb.append(DAY_DELIMITER);
-            sb.append(String.format("%2d", i));
-            if ((dayOfWeek++ % DAYS_IN_WEEK) == 1) {
-                sb.append('\n');
-            }
-        }
-    }
-
-///////////////////////////////////////////////////////////////
-// #printActualYearInColumns(Calendar, int) computation methods
-///////////////////////////////////////////////////////////////
-
-    private void printLineOfMonths(Calendar cal, int minMonth, int maxMonth) {
-        StringBuilder sb = new StringBuilder();
-
-        // generate 1st line "MONTH_NAME & YEAR"
-        String delimiter = "";
-        for (int j = minMonth; j < maxMonth; j++) {
-            cal.set(Calendar.MONTH, j);
-            sb.append(delimiter);
-            String month = MONTHS_NAMES.get(cal.get(Calendar.MONTH));
-            int year = cal.get(Calendar.YEAR);
-            String header = String.format("%" + LINE_LENGTH + "s",
-                    month + CELL_FILLER + year);
-            sb.append(header);
-            delimiter = MONTH_DELIMITER;
-        }
-        sb.append('\n');
-
-        // generate 2nd line "MONTH_HEADER"
-        delimiter = "";
-        for (int i = minMonth; i < maxMonth; i++) {
+    private String[] generateMonthsStringView(Calendar cal) {
+        String[] month = new String[MONTHS_IN_YEAR];
+        for (int i = 0; i < month.length; i++) {
+            boolean isPrintable = false;
             cal.set(Calendar.MONTH, i);
-            sb.append(delimiter);
-            sb.append(MONTH_HEADER);
-            delimiter = MONTH_DELIMITER;
+            month[i] = generateSeparateMonthStringView(cal, isPrintable);
         }
-        sb.append('\n');
-
-        // generate months
-        int weeksNumber = 6;
-//        int weeksNumber = getMaxWeeksNumber(cal, minMonth, maxMonth);
-        StringBuilder[] builders = new StringBuilder[weeksNumber];
-        for (int i = 0; i < builders.length; i++) {
-            builders[i] = new StringBuilder("\n");
-        }
-
-        for (int i = maxMonth - 1; i >= minMonth; i--) {
-            cal.set(Calendar.MONTH, i);
-            int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-            int actualMinimumDay = cal.getActualMinimum(Calendar.DAY_OF_MONTH);
-            int actualMaximumDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-
-            int pointerToBuildsIndex = 0;
-
-            StringBuilder weekBuilder = new StringBuilder();
-            for (int j = actualMinimumDay; j <= actualMaximumDay; j++) {
-                if (j == 1) {
-                    String firstOffset = calculateFirstDayOfMonthOffset(dayOfWeek);
-                    weekBuilder.append(firstOffset);
-                }
-                weekBuilder.append(DAY_DELIMITER);
-                weekBuilder.append(String.format("%2d", j));
-
-                if (j == actualMaximumDay) {
-                    String lastOffset = calculateLastDayOfMonthOffset(cal, actualMaximumDay);
-                    weekBuilder.append(lastOffset);
-
-                    builders[pointerToBuildsIndex].insert(0, weekBuilder);
-                    if (i != minMonth) {
-                        builders[pointerToBuildsIndex].insert(0, MONTH_DELIMITER);
-                    }
-
-                    if ((pointerToBuildsIndex != (builders.length - 1))
-                            && (builders[pointerToBuildsIndex + 1].length() > 1)) {
-                        builders[pointerToBuildsIndex + 1].insert(0, MONTH_RECORD_FILLER);
-                        if (i != minMonth && builders[pointerToBuildsIndex + 1].length() > 1) {
-                            builders[pointerToBuildsIndex + 1].insert(0, MONTH_DELIMITER);
-                        }
-                    }
-                    weekBuilder.delete(0, weekBuilder.length());
-                    pointerToBuildsIndex++;
-                }
-
-                if ((dayOfWeek++ % DAYS_IN_WEEK) == Calendar.SUNDAY) {
-                    builders[pointerToBuildsIndex].insert(0, weekBuilder);
-                    if (i != minMonth) {
-                        builders[pointerToBuildsIndex].insert(0, MONTH_DELIMITER);
-                    }
-                    weekBuilder.delete(0, weekBuilder.length());
-                    pointerToBuildsIndex++;
-                }
-            }
-        }
-        for (StringBuilder builder : builders) {
-            sb.append(builder);
-        }
-        System.out.println(sb.toString());
+        return month;
     }
 
-//    private int getMaxWeeksNumber(Calendar cal, int minMonth, int maxMonth) {
-//        int maxWeeksNumber = Integer.MIN_VALUE;
-//        for (int i = minMonth; i < maxMonth; i++) {
-//            cal.set(Calendar.MONTH, minMonth);
-//            int weeksNumber = cal.getActualMaximum(Calendar.WEEK_OF_MONTH);
-//            if (weeksNumber > maxWeeksNumber) {
-//                maxWeeksNumber = weeksNumber;
-//            }
-//        }
-//        return maxWeeksNumber;
-//    }
+    private void printRowOfMonths(String[] month, int startMonth, int endMonth) {
+        StringBuilder[] compoundLines = initializeContainerOfCompoundLines();
+
+        for (int i = startMonth; i < endMonth; i++) {
+            updateCompoundLinesWithMonthOnes(compoundLines, month[i]);
+        }
+
+        StringBuilder strBuilder = new StringBuilder();
+        for (StringBuilder compoundLine : compoundLines) {
+            strBuilder.append(compoundLine).append("\n");
+        }
+
+        System.out.println(new String(strBuilder));
+    }
+
+    private void updateCompoundLinesWithMonthOnes(StringBuilder[] compoundLines,
+            String strMonth) {
+        String[] monthLines = strMonth.split("\n");
+        for (int j = 0; j < monthLines.length; j++) {
+            compoundLines[j].append(monthLines[j]).append(MONTH_DELIMITER);
+        }
+        int indexOfLastWeek = compoundLines.length - 1;
+        if (monthLines.length < compoundLines.length) {
+            compoundLines[indexOfLastWeek]
+                    .append(MONTH_RECORD_FILLER)
+                    .append(MONTH_DELIMITER);
+        }
+    }
+
+    private StringBuilder[] initializeContainerOfCompoundLines() {
+        StringBuilder[] container = new StringBuilder[LINES_IN_MONTH];
+        for (int i = 0; i < container.length; i++) {
+            container[i] = new StringBuilder();
+        }
+        return container;
+    }
 }

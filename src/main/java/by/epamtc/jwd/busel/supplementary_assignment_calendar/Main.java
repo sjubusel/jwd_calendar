@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
         int month = 6;          // from 0 to 11 inclusively
         int year = 2020;        // any year
-        int columnNumber = 3;   // any column number from 1 to 12
+        int columnNumber = 4;   // any column number from 1 to 12
 
         MyCalendarFactory calendarFactory = MyCalendarFactory.getInstance();
         Calendar cal = calendarFactory.getCalendar(year, month);
@@ -18,8 +18,8 @@ public class Main {
         System.out.println("\n↓↓↓ SEPARATE MONTH ↓↓↓\n");
         printer.printActualMonth(cal);
         System.out.println("\n↓↓↓ YEAR WITH COLUMNS ONE AFTER ANOTHER ↓↓↓\n");
-        printer.printActualYearOneAfterAnother(cal);
+        printer.printActualYear(cal);
         System.out.println("\n↓↓↓ YEAR WITH ADJUSTABLE COLUMNS ↓↓↓\n");
-        printer.printActualYearInColumns(cal, columnNumber);
+        printer.printActualYear(cal, columnNumber);
     }
 }
